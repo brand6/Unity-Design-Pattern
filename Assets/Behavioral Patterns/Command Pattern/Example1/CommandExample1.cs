@@ -29,7 +29,92 @@ namespace CommandExample1
             user.Undo(4);
 
             // Redo 3 commands
-            user.Redo(3);
+            user.Redo(2);
+
+            user.Compute('/', 4);
+            user.Redo(1);
+        }
+    }
+
+    /// <summary>
+    /// The 'Invoker' class
+    /// </summary>
+    class User
+    {
+        // Initializers
+        private Calculator _calculator = new Calculator();
+        private List<Command> _commands = new List<Command>();
+        private int _current = 0;
+
+        public void Redo(int levels)
+        {
+            Debug.Log("\n---- Redo " + levels + " levels");
+            for (int i = 0; i < levels; i++)
+            {
+                if (_current < _commands.Count - 1)
+                {
+                    Command command = _commands[_current++];
+                    command.Execute();
+                }
+                else
+                {
+                    Debug.Log("Nothing to Redo");
+                }
+            }
+        }
+
+        public void Undo(int levels)
+        {
+            Debug.Log("\n---- Undo " + levels + " levels");
+            // Perform undo operations
+            for (int i = 0; i < levels; i++)
+            {
+                if (_current > 0)
+                {
+                    Command command = _commands[--_current] as Command;
+                    command.UnExecute();
+                }
+                else
+                {
+                    Debug.Log("Nothing to Undo");
+                }
+            }
+        }
+
+        public void Compute(char @operator, int operand)
+        {
+            // Create command operation and execute it
+            Command command = new CalculatorCommand(
+              _calculator, @operator, operand);
+            command.Execute();
+
+            // Add command to undo list
+            for(int i = _current; i < _commands.Count; i++)
+            {
+                _commands.RemoveAt(i);
+            }
+            _commands.Add(command);
+            _current++;
+        }
+    }
+
+    /// <summary>
+    /// The 'Receiver' class
+    /// </summary>
+    class Calculator
+    {
+        private int _curr = 0;
+
+        public void Operation(char @operator, int operand)
+        {
+            switch (@operator)
+            {
+                case '+': _curr += operand; break;
+                case '-': _curr -= operand; break;
+                case '*': _curr *= operand; break;
+                case '/': _curr /= operand; break;
+            }
+            Debug.Log("Current value = " + _curr + " ( following " + @operator + operand + " )");
         }
     }
 
@@ -37,10 +122,10 @@ namespace CommandExample1
     /// The 'Command' abstract class
     /// </summary>
     abstract class Command
-    {
-        public abstract void Execute();
-        public abstract void UnExecute();
-    }
+        {
+            public abstract void Execute();
+            public abstract void UnExecute();
+        }
 
     /// <summary>
     /// The 'ConcreteCommand' class
@@ -97,75 +182,6 @@ namespace CommandExample1
                     throw new
             ArgumentException("@operator");
             }
-        }
-    }
-
-    /// <summary>
-    /// The 'Receiver' class
-    /// </summary>
-    class Calculator
-    {
-        private int _curr = 0;
-
-        public void Operation(char @operator, int operand)
-        {
-            switch (@operator)
-            {
-                case '+': _curr += operand; break;
-                case '-': _curr -= operand; break;
-                case '*': _curr *= operand; break;
-                case '/': _curr /= operand; break;
-            }
-            Debug.Log("Current value = " + _curr+ " ( following "+ @operator+operand+" )");
-        }
-    }
-
-    /// <summary>
-    /// The 'Invoker' class
-    /// </summary>
-    class User
-    {
-        // Initializers
-        private Calculator _calculator = new Calculator();
-        private List<Command> _commands = new List<Command>();
-        private int _current = 0;
-
-        public void Redo(int levels)
-        {
-            for (int i = 0; i < levels; i++)
-            {
-                if (_current < _commands.Count - 1)
-                {
-                    Command command = _commands[_current++];
-                    command.Execute();
-                }
-            }
-        }
-
-        public void Undo(int levels)
-        {
-            Debug.Log("\n---- Undo "+ levels + " levels");
-            // Perform undo operations
-            for (int i = 0; i < levels; i++)
-            {
-                if (_current > 0)
-                {
-                    Command command = _commands[--_current] as Command;
-                    command.UnExecute();
-                }
-            }
-        }
-
-        public void Compute(char @operator, int operand)
-        {
-            // Create command operation and execute it
-            Command command = new CalculatorCommand(
-              _calculator, @operator, operand);
-            command.Execute();
-
-            // Add command to undo list
-            _commands.Add(command);
-            _current++;
         }
     }
 }
